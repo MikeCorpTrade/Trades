@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn")
 import ta
-import MetaTrader5 as mt5
+# import MetaTrader5 as mt5
 import plotly.express as px
 from datetime import datetime, time
 import xlsxwriter
@@ -17,14 +17,14 @@ import plotly.graph_objects as go
 def import_csv_data(file_path: str) -> pd.DataFrame:
 	return pd.read_csv(file_path, parse_dates=["time"], index_col="time")
 
-def import_mt5_data(ticker, timeFrame, startDate, endDate=datetime.now()):
-	mt5.initialize()
-	bars = mt5.copy_rates_range(ticker, timeFrame, startDate, endDate)
-	data = pd.DataFrame(bars)
-	data["time"] = pd.to_datetime(data["time"], unit="s")
-	data = data.set_index("time")
-	data = data.drop(labels=["tick_volume", "spread", "real_volume"], axis=1)
-	return data
+# def import_mt5_data(ticker, timeFrame, startDate, endDate=datetime.now()):
+# 	mt5.initialize()
+# 	bars = mt5.copy_rates_range(ticker, timeFrame, startDate, endDate)
+# 	data = pd.DataFrame(bars)
+# 	data["time"] = pd.to_datetime(data["time"], unit="s")
+# 	data = data.set_index("time")
+# 	data = data.drop(labels=["tick_volume", "spread", "real_volume"], axis=1)
+# 	return data
 
 def shift_data(data: pd.DataFrame, columns, number_shift) -> pd.DataFrame:
   for column in columns:
