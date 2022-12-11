@@ -2,13 +2,15 @@ import pandas as pd
 from prepare_data import *
 from Position.Position import Position
 
-class Strategy_rsi_stoch_ema50:
-    def __init__(self, df, starting_balance, volume, spread, ratio=1.5, security_sl=41):
+class Strategy_rsi_stoch_ema50_double_sl:
+    def __init__(self, df, starting_balance, volume, spread, security_sl_1, security_sl_2, ratio=1.5, security_sl=41):
         self.starting_balance = starting_balance
         self.volume = volume
         self.positions = []
         self.data = df
         self.security_sl = security_sl
+        self.security_sl_1 = security_sl_1
+        self.security_sl_2 = security_sl_2
         self.ratio = ratio
         self.spread = spread
         self.buy_trade_time = {}
@@ -34,6 +36,10 @@ class Strategy_rsi_stoch_ema50:
         # BUY
         if row["RSI"] > 50 and row["buy_strategy_signal"] and above_ema(row["close"], row["EMA"]) and not in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time) and self.trading_allowed():
             sl = row["low"] - (row["ATR"] + self.security_sl)
+            if row["ATR"] < 47.3:
+                sl =row["low"] - (row["ATR"] + self.security_sl_1)
+            if 47.3 < row["ATR"] < 62.5:
+                sl = row["low"] - (row["ATR"] + self.security_sl_2)
             tp = row["close"] + self.ratio*(row["close"] - sl )
             buy_stoch_ema_signal_time = in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time)
             self.buy_trade_time[buy_stoch_ema_signal_time] = True
@@ -42,6 +48,10 @@ class Strategy_rsi_stoch_ema50:
         # SELL
         if row["RSI"] < 50 and row["sell_strategy_signal"] and not above_ema(row["close"], row["EMA"]) and not in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time) and self.trading_allowed():
             sl = row["high"] + (row["ATR"] + self.security_sl)
+            # if row["ATR"] < 47.3:
+            #     sl = row["high"] + (row["ATR"] + self.security_sl_1)
+            # if 47.3 < row["ATR"] < 62.5:
+            #     sl = row["high"] + (row["ATR"] + self.security_sl_2)
             tp = row["close"] - self.ratio*(sl - row["close"])
             sell_stoch_ema_signal_time = in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time)
             self.sell_trade_time[sell_stoch_ema_signal_time] = True
