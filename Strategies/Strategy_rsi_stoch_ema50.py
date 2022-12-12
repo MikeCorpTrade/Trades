@@ -13,6 +13,8 @@ class Strategy_rsi_stoch_ema50:
         self.spread = spread
         self.buy_trade_time = {}
         self.sell_trade_time = {}
+        self.current_latest_high = 0
+        self.iteration = 0
         
         
     def get_positions_df(self):
@@ -33,7 +35,8 @@ class Strategy_rsi_stoch_ema50:
     def strategy_rsi_stoch_ema50(self, index, row):
         # BUY
         if row["RSI"] > 50 and row["buy_strategy_signal"] and above_ema(row["close"], row["EMA"]) and not in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time) and self.trading_allowed():
-            sl = row["low"] - (row["ATR"] + self.security_sl)
+            # sl = row["low"] - (row["ATR"] + self.security_sl)
+            sl = previous_swing_low(row["low"], row["prev_low_1"], row["prev_low_2"], row["prev_low_3"], row["prev_low_4"], row["prev_low_5"]) - self.security_sl
             tp = row["close"] + self.ratio*(row["close"] - sl )
             buy_stoch_ema_signal_time = in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time)
             self.buy_trade_time[buy_stoch_ema_signal_time] = True
@@ -41,7 +44,8 @@ class Strategy_rsi_stoch_ema50:
 
         # SELL
         if row["RSI"] < 50 and row["sell_strategy_signal"] and not above_ema(row["close"], row["EMA"]) and not in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time) and self.trading_allowed():
-            sl = row["high"] + (row["ATR"] + self.security_sl)
+            # sl = row["high"] + (row["ATR"] + self.security_sl)
+            sl = previous_swing_high(row["high"], row["prev_high_1"], row["prev_high_2"], row["prev_high_3"], row["prev_high_4"], row["prev_high_5"]) + self.security_sl
             tp = row["close"] - self.ratio*(sl - row["close"])
             sell_stoch_ema_signal_time = in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time)
             self.sell_trade_time[sell_stoch_ema_signal_time] = True

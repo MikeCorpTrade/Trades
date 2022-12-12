@@ -2,7 +2,7 @@ import pandas as pd
 from prepare_data import *
 from Position.Position import Position
 
-class Strategy_rsi_stoch_ema50:
+class Strategy_stoch_ema50_engulthing_candle:
     def __init__(self, df, starting_balance, volume, spread, ratio=1.5, security_sl=41):
         self.starting_balance = starting_balance
         self.volume = volume
@@ -30,9 +30,9 @@ class Strategy_rsi_stoch_ema50:
         
         return True
 
-    def strategy_rsi_stoch_ema50(self, index, row):
+    def strategy_stoch_ema50_engulthing_candle(self, index, row):
         # BUY
-        if row["RSI"] > 50 and row["buy_strategy_signal"] and above_ema(row["close"], row["EMA"]) and not in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time) and self.trading_allowed():
+        if  bullish_engulfing_candle(row["open"], row["close"], row["prev_open"], row["prev_close"]) and row["stochastic_crossover"] and above_ema(row["close"], row["EMA"]) and not in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time) and self.trading_allowed():
             sl = row["low"] - (row["ATR"] + self.security_sl)
             tp = row["close"] + self.ratio*(row["close"] - sl )
             buy_stoch_ema_signal_time = in_the_buy_trade_time(row["prev_buy_stoch_ema_signal_1"], row["prev_buy_stoch_ema_signal_2"], row["prev_buy_stoch_ema_signal_3"], row["prev_buy_stoch_ema_signal_4"], self.buy_trade_time)
@@ -40,7 +40,7 @@ class Strategy_rsi_stoch_ema50:
             self.add_position(Position(index, row["close"], "buy", self.volume, sl, tp, self.spread))
 
         # SELL
-        if row["RSI"] < 50 and row["sell_strategy_signal"] and not above_ema(row["close"], row["EMA"]) and not in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time) and self.trading_allowed():
+        if bearish_engulfing_candle(row["open"], row["close"], row["prev_open"], row["prev_close"]) and row["stochastic_crossover"] and not above_ema(row["close"], row["EMA"]) and not in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time) and self.trading_allowed():
             sl = row["high"] + (row["ATR"] + self.security_sl)
             tp = row["close"] - self.ratio*(sl - row["close"])
             sell_stoch_ema_signal_time = in_the_sell_trade_time(row["prev_sell_stoch_ema_signal_1"], row["prev_sell_stoch_ema_signal_2"], row["prev_sell_stoch_ema_signal_3"], row["prev_sell_stoch_ema_signal_4"], self.sell_trade_time)
@@ -61,7 +61,7 @@ class Strategy_rsi_stoch_ema50:
         
     def run(self):
         for index, row in self.data.iterrows():
-            self.strategy_rsi_stoch_ema50(index, row)
+            self.strategy_stoch_ema50_engulthing_candle(index, row)
                 
             for pos in self.positions:
                 self.control_position(pos, index, row)

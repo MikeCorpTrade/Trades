@@ -275,8 +275,27 @@ def write_excel_file(result, file_name="demo.xlsx", profit="profit"):
   return workbook.close()
 
 # --------------------------------------------------------------------------------------
-# TODO find previous swing high/low
+# find previous swing high/low
 # --------------------------------------------------------------------------------------
+
+def previous_swing_low(low,prev_low_1,prev_low_2,prev_low_3,prev_low_4,prev_low_5):
+  return min([low,prev_low_1,prev_low_2,prev_low_3,prev_low_4,prev_low_5])
+
+def previous_swing_high(high,prev_high_1,prev_high_2,prev_high_3,prev_high_4,prev_high_5):
+  return max([high,prev_high_1,prev_high_2,prev_high_3,prev_high_4,prev_high_5])
+
+# --------------------------------------------------------------------------------------
+# TODO Engulfing Candle
+# --------------------------------------------------------------------------------------
+
+def engulfing_candle(open, close, prev_open, prev_close):
+  if prev_close < prev_open:
+    if close > open and close > prev_open:
+      return "bullish candle"
+  if prev_close > prev_open:
+    if close < open and close < prev_open:
+      return "bearish candle"
+  return None
 
 
 # --------------------------------------------------------------------------------------
@@ -342,6 +361,7 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # --------------------------------------------------------------------------------------
   #  Strategy
   # --------------------------------------------------------------------------------------
+  data = shift_data(data, ["open", "close"], 1)
   data.dropna(inplace=True)
   # --------------------------------------------------------------------------------------
   # RSI Crossover
@@ -357,4 +377,13 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   data = shift_data(data, ["buy_stoch_ema_signal", "sell_stoch_ema_signal"], 4)
   data["sell_strategy_signal"] = np.vectorize(find_final_sell_signal)(data["stochastic_crossover"], data["prev_sell_stoch_ema_signal_1"], data["prev_sell_stoch_ema_signal_2"], data["prev_sell_stoch_ema_signal_3"], data["prev_sell_stoch_ema_signal_4"])
   data["buy_strategy_signal"] = np.vectorize(find_final_buy_signal)(data["stochastic_crossover"], data["prev_buy_stoch_ema_signal_1"], data["prev_buy_stoch_ema_signal_2"], data["prev_buy_stoch_ema_signal_3"], data["prev_buy_stoch_ema_signal_4"])
+  # --------------------------------------------------------------------------------------
+  #  previous swing low
+  # --------------------------------------------------------------------------------------
+  data = shift_data(data, ["low", "high"], 5)
+  # --------------------------------------------------------------------------------------
+  # Engulfing Candles
+  # --------------------------------------------------------------------------------------
+  data["engulfing candles"] = np.vectorize(engulfing_candle)(data["open"], data["close"], data["prev_open"], data["prev_close"])
+  
   return data
