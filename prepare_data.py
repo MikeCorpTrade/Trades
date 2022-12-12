@@ -26,7 +26,7 @@ def import_csv_data(file_path: str) -> pd.DataFrame:
 # 	data = data.drop(labels=["tick_volume", "spread", "real_volume"], axis=1)
 # 	return data
 
-def shift_data(data: pd.DataFrame, columns, number_shift) -> pd.DataFrame:
+def shift_data(data: pd.DataFrame, columns, number_shift=1) -> pd.DataFrame:
   for column in columns:
     if column not in data.columns:
       return f"column {column} not found in data"
@@ -297,6 +297,20 @@ def engulfing_candle(open, close, prev_open, prev_close):
       return "bearish candle"
   return None
 
+# --------------------------------------------------------------------------------------
+# TODO MCR candles
+# --------------------------------------------------------------------------------------
+
+def mcr_candle(open ,close, low, high, atr_7, ema_20):
+  if close < open and open - close > atr_7 and close < ema_20:
+    buy_stop = low + 0.38*(high - low)
+    if close < buy_stop < open:
+      return  "bullish", buy_stop
+  if open < close and close - open > atr_7 and close > ema_20:
+    sell_stop = high - 0.38*(high - low)
+    if open < sell_stop < close:
+      return "bearish", sell_stop
+  return None
 
 # --------------------------------------------------------------------------------------
 # Max Drawdown
@@ -314,6 +328,7 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # Calculate EMA
   # --------------------------------------------------------------------------------------
   data["EMA"] = ta.trend.ema_indicator(data["close"], window=ema)
+  data["EMA20"] = ta.trend.ema_indicator(data["close"], window=20)
   # --------------------------------------------------------------------------------------
   # Bollinger Bands
   # --------------------------------------------------------------------------------------
@@ -358,6 +373,7 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # ATR
   # --------------------------------------------------------------------------------------
   data["ATR"] = ta.volatility.average_true_range(data["high"], data["low"], data["close"])
+  data["ATR7"] = ta.volatility.average_true_range(data["high"], data["low"], data["close"], window=7)
   # --------------------------------------------------------------------------------------
   #  Strategy
   # --------------------------------------------------------------------------------------
@@ -385,5 +401,10 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # Engulfing Candles
   # --------------------------------------------------------------------------------------
   data["engulfing candles"] = np.vectorize(engulfing_candle)(data["open"], data["close"], data["prev_open"], data["prev_close"])
+  # --------------------------------------------------------------------------------------
+  # MCR Candles
+  # --------------------------------------------------------------------------------------
+  data["MCR"] = np.vectorize(mcr_candle)(data["open"], data["close"], data["low"], data["high"], data["ATR7"], data["EMA20"])
+  data = shift_data(data, ["MCR"], 1)
   
   return data
