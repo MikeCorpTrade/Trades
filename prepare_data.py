@@ -80,6 +80,7 @@ xtreme_high_bb = 0.8
 xtreme_low_bb = 1-xtreme_high_bb
 stochRSIUp = 80
 stochRSILow = 100 - stochRSIUp
+ema200 = 200
 # --------------------------------------------------------------------------------------
 #  Indicators
 # --------------------------------------------------------------------------------------
@@ -117,13 +118,13 @@ def find_sell_stoch_ema_signal(close, ema, stoch_crossover):
 
 
 # Bollinger Band 80% 20%
-def find_overbought_BB(bb_1, bb_2, bb_3):
-  if bb_1 >= xtreme_high_bb or bb_2 >= xtreme_high_bb or bb_3 >= xtreme_high_bb:
+def find_overbought_BB(bb, bb_1, bb_2, bb_3):
+  if bb >= xtreme_high_bb or bb_1 >= xtreme_high_bb or bb_2 >= xtreme_high_bb or bb_3 >= xtreme_high_bb:
     return True
   return False
 
-def find_oversold_BB(bb_1, bb_2, bb_3):
-  if bb_1 <= xtreme_low_bb or bb_2 <= xtreme_low_bb or bb_3 <= xtreme_low_bb:
+def find_oversold_BB(bb, bb_1, bb_2, bb_3):
+  if bb <= xtreme_low_bb or bb_1 <= xtreme_low_bb or bb_2 <= xtreme_low_bb or bb_3 <= xtreme_low_bb:
     return True
   return False
 
@@ -138,6 +139,17 @@ def get_sell_signal_rsi(rsi_crossover):
 
 def get_buy_signal_rsi(rsi_crossover):
   if rsi_crossover == "bullish crossover":
+    return True
+  return False
+
+# StochRSI
+def buy_stochrsi_signal(stochrsi_k, prev_stochrsi_k):
+  if stochrsi_k >= stochRSILow and prev_stochrsi_k <= stochRSILow:
+    return True
+  return False
+
+def sell_stochrsi_signal(stochrsi_k, prev_stochrsi_k):
+  if stochrsi_k <= stochRSIUp and prev_stochrsi_k >= stochRSIUp:
     return True
   return False
 
@@ -328,7 +340,7 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # Calculate EMA
   # --------------------------------------------------------------------------------------
   data["EMA"] = ta.trend.ema_indicator(data["close"], window=ema)
-  data["EMA20"] = ta.trend.ema_indicator(data["close"], window=20)
+  data["EMA200"] = ta.trend.ema_indicator(data["close"], window=200)
   # --------------------------------------------------------------------------------------
   # Bollinger Bands
   # --------------------------------------------------------------------------------------
@@ -360,6 +372,7 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # --------------------------------------------------------------------------------------
   data["StochRSI_k"] = ta.momentum.stochrsi_k(data["close"]) * 100
   data["StochRSI_d"] = ta.momentum.stochrsi_d(data["close"]) * 100
+  data = shift_data(data, ["StochRSI_k"])
   # --------------------------------------------------------------------------------------
   #  Stochastic
   # --------------------------------------------------------------------------------------
@@ -393,18 +406,4 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   data = shift_data(data, ["buy_stoch_ema_signal", "sell_stoch_ema_signal"], 4)
   data["sell_strategy_signal"] = np.vectorize(find_final_sell_signal)(data["stochastic_crossover"], data["prev_sell_stoch_ema_signal_1"], data["prev_sell_stoch_ema_signal_2"], data["prev_sell_stoch_ema_signal_3"], data["prev_sell_stoch_ema_signal_4"])
   data["buy_strategy_signal"] = np.vectorize(find_final_buy_signal)(data["stochastic_crossover"], data["prev_buy_stoch_ema_signal_1"], data["prev_buy_stoch_ema_signal_2"], data["prev_buy_stoch_ema_signal_3"], data["prev_buy_stoch_ema_signal_4"])
-  # --------------------------------------------------------------------------------------
-  #  previous swing low
-  # --------------------------------------------------------------------------------------
-  data = shift_data(data, ["low", "high"], 5)
-  # --------------------------------------------------------------------------------------
-  # Engulfing Candles
-  # --------------------------------------------------------------------------------------
-  data["engulfing candles"] = np.vectorize(engulfing_candle)(data["open"], data["close"], data["prev_open"], data["prev_close"])
-  # --------------------------------------------------------------------------------------
-  # MCR Candles
-  # --------------------------------------------------------------------------------------
-  data["MCR"] = np.vectorize(mcr_candle)(data["open"], data["close"], data["low"], data["high"], data["ATR7"], data["EMA20"])
-  data = shift_data(data, ["MCR"], 1)
-  
   return data
