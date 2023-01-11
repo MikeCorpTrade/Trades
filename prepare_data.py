@@ -301,15 +301,15 @@ def engulfing_candle(open, close, prev_open, prev_close):
 # TODO MCR candles
 # --------------------------------------------------------------------------------------
 
-def mcr_candle(open ,close, low, high, atr_7, ema_20):
+def mcr_candle(open ,close, low, high, atr_7, ema_20, atr):
   if close < open and open - close > atr_7 and close < ema_20:
     buy_stop = low + 0.38*(high - low)
     if close < buy_stop < open:
-      return  "bullish", buy_stop
+      return np.array(["bullish", buy_stop, atr])
   if open < close and close - open > atr_7 and close > ema_20:
     sell_stop = high - 0.38*(high - low)
     if open < sell_stop < close:
-      return "bearish", sell_stop
+      return np.array(["bearish", sell_stop, atr]) 
   return None
 
 # --------------------------------------------------------------------------------------
@@ -404,7 +404,8 @@ def prepare_data(data: pd.DataFrame, ema: int=ema) -> pd.DataFrame:
   # --------------------------------------------------------------------------------------
   # MCR Candles
   # --------------------------------------------------------------------------------------
-  data["MCR"] = np.vectorize(mcr_candle)(data["open"], data["close"], data["low"], data["high"], data["ATR7"], data["EMA20"])
+  data["MCR"] = np.vectorize(mcr_candle)(data["open"], data["close"], data["low"], data["high"], data["ATR7"], data["EMA20"], data["ATR"])
   data = shift_data(data, ["MCR"], 1)
+  data = data.fillna(False)
   
   return data

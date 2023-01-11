@@ -15,8 +15,8 @@ class Position:
     def close_position(self, close_datetime, close_price):
         self.close_datetime = close_datetime
         self.close_price = close_price
-        self.profit = (self.close_price - self.open_price) * self.volume - self.spread if self.order_type == 'buy' \
-                                                                        else (self.open_price - self.close_price) * self.volume - self.spread
+        self.profit = (self.close_price - self.open_price)  * 10000 * self.volume - self.spread if self.order_type == 'buy' \
+                                                                        else (self.open_price - self.close_price) * self.volume * 10000 - self.spread
         self.status = 'closed'
         
     def _asdict(self):
